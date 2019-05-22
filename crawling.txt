@@ -1,0 +1,55 @@
+install.packages("twitteR")
+library(twitteR)
+consumerKey="x99cP8kLyE6fmi2oDcBfV9QpR"
+consumerSecret="53Yn9pSnvluxCykU5tiM3qef7B60Py50H7VZvVxApBdm6erWzh"
+accessToken="756408420-9YgCW2byaT3GAxWzLc3n9kt8lbmXpsyYycAtI5gP"
+accessTokenSecret="J3ymvMVcTW4qjCjxmZycNaOwzLvajlENuR6a2U5gYIBMI"
+
+setup_twitter_oauth(consumerKey,consumerSecret,accessToken,accessTokenSecret)
+
+keyword <- enc2utf8("보안")
+bigdata <- searchTwitter(keyword,n=1000,lang="ko")
+
+class(bigdata)
+bigdata_df<-twListToDF(bigdata)
+str(bigdata_df)
+
+library(KoNLP)
+useSejongDic()
+bigdata_text<-bigdata_df$text
+head(bigdata_text)
+
+bigdata_noun <- sapply(bigdata_text,extractNoun,USE.NAMES = F)
+class(bigdata_noun)
+
+bigdata_noun <- unlist(bigdata_noun)
+f <- function(x){nchar(x)>=2}
+f("hello world")
+f("hi")
+bigdata_noun <- Filter(function(x){nchar(x)>=2},bigdata_noun)
+bigdata_noun
+bigdata_noun<-gsub("[A-Za-z0-9]","",bigdata_noun)
+bigdata_noun
+bigdata_noun<-gsub("[~!@#$%^&*()-_+=|:?]","",bigdata_noun)
+bigdata_noun
+bigdata_noun<-gsub("[ㄱ~ㅎ]","",bigdata_noun)
+bigdata_noun<-gsub("(ㅜ|ㅠ)+","",bigdata_noun)
+bigdata_noun
+word_table<-table(bigdata_noun)
+class(word_table)
+library(wordcloud2)
+wordcloud2(word_table,fontFamily="맑은 고딕",size=5,color="random-light",backgroundColor="black")
+df_word_table<-as.data.frame(word_table,stringasFactors=F)
+head(df_word_table,10)
+df_word_table<-rename(df_word_table,word=bigdata_noun,freq=Freq)
+top<- df_word_table %>% arrange(desc(freq))
+head(top,10)
+
+top[1,]<-NA
+head(top)
+top<-top %>%filter(!is.na(word))
+wordcloud2(top,fontFamily="맑은 고딕",size=5,color="random-light",backgroundColor="black")
+
+top_10<-head(top,10)
+top_10
+wordcloud2(top_10,fontFamily="맑은 고딕",size=1,color="random-light",backgroundColor="black")
